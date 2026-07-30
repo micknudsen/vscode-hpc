@@ -1,6 +1,6 @@
 # VS Code on Slurm compute nodes
 
-`vscode-alloc` reserves a Slurm compute node and opens an HPC folder on that
+The script `vscode-alloc` reserves a Slurm compute node and opens an HPC folder on that
 node using VS Code Remote-SSH. This moves the VS Code server, extensions,
 terminals, language servers, and indexers off the login/frontend node.
 
