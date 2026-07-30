@@ -1,0 +1,130 @@
+#!/usr/bin/env bash
+# Allocate one Slurm compute node and open it with VS Code Remote-SSH.
+#
+# Configuration is supplied entirely through HPC_VSCODE_* environment variables.
+# See --help for the required variables and a setup example.
+
+set -euo pipefail
+
+HPC_HOST="${HPC_VSCODE_HOST:-}"
+HPC_USER="${HPC_VSCODE_USER:-}"
+TIME="${HPC_VSCODE_TIME:-}"
+CPUS="${HPC_VSCODE_CPUS:-}"
+MEMORY="${HPC_VSCODE_MEMORY:-}"
+PARTITION="${HPC_VSCODE_PARTITION:-}"
+ACCOUNT="${HPC_VSCODE_ACCOUNT:-}"
+FOLDER=""
+
+usage() {
+  cat <<'EOF'
+Usage: vscode-alloc [options]
+
+Request an interactive-style Slurm allocation, wait for its compute node, and
+open FOLDER in a VS Code Remote-SSH window.
+
+Options:
+  --time HH:MM:SS       Override HPC_VSCODE_TIME
+  --cpus N              Override HPC_VSCODE_CPUS
+  --mem SIZE            Override HPC_VSCODE_MEMORY
+  --partition NAME      Override HPC_VSCODE_PARTITION
+  --account NAME        Override HPC_VSCODE_ACCOUNT
+  --folder PATH         REQUIRED: HPC folder to open
+  --help                Show this help
+
+Required environment variables:
+  HPC_VSCODE_HOST       Hostname of the HPC login node
+  HPC_VSCODE_USER       Username used to log in to the HPC
+  HPC_VSCODE_TIME       Slurm wall time, e.g. 04:00:00
+  HPC_VSCODE_CPUS       CPUs per task, e.g. 4
+  HPC_VSCODE_MEMORY     Memory request, e.g. 8G
+
+Optional environment variables:
+  HPC_VSCODE_PARTITION  Slurm partition
+  HPC_VSCODE_ACCOUNT    Slurm account/project
+
+Examples:
+  export HPC_VSCODE_HOST=login.hpc.example HPC_VSCODE_USER=my-username
+  export HPC_VSCODE_TIME=04:00:00 HPC_VSCODE_CPUS=4 HPC_VSCODE_MEMORY=8G
+  vscode-alloc --folder /home/me/project
+  vscode-alloc --time 02:00:00 --folder /home/me/project
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --time) TIME="$2"; shift 2 ;;
+    --cpus) CPUS="$2"; shift 2 ;;
+    --mem) MEMORY="$2"; shift 2 ;;
+    --partition) PARTITION="$2"; shift 2 ;;
+    --account) ACCOUNT="$2"; shift 2 ;;
+    --folder) FOLDER="$2"; shift 2 ;;
+    --help|-h) usage; exit 0 ;;
+    *) echo "Unknown option: $1" >&2; usage >&2; exit 2 ;;
+  esac
+done
+
+[[ -n "$HPC_HOST" ]] || { echo "Missing required environment variable: HPC_VSCODE_HOST" >&2; exit 2; }
+[[ -n "$HPC_USER" ]] || { echo "Missing required environment variable: HPC_VSCODE_USER" >&2; exit 2; }
+[[ -n "$TIME" ]] || { echo "Missing required environment variable: HPC_VSCODE_TIME" >&2; exit 2; }
+[[ -n "$CPUS" ]] || { echo "Missing required environment variable: HPC_VSCODE_CPUS" >&2; exit 2; }
+[[ -n "$MEMORY" ]] || { echo "Missing required environment variable: HPC_VSCODE_MEMORY" >&2; exit 2; }
+[[ -n "$FOLDER" ]] || { echo "--folder is required and must be a path on the HPC filesystem." >&2; exit 2; }
+
+if ! command -v code >/dev/null 2>&1; then
+  echo "The VS Code 'code' command is not on PATH." >&2
+  echo "In VS Code, run: Shell Command: Install 'code' command in PATH" >&2
+  exit 2
+fi
+
+# Build a remote sbatch command safely. The job's only task is to keep the
+# allocation alive; VS Code reaches the assigned node over SSH independently.
+SBATCH=(sbatch --parsable --job-name=vscode --nodes=1 --ntasks=1
+  --cpus-per-task="$CPUS" --mem="$MEMORY" --time="$TIME"
+  --output=/dev/null --error=/dev/null)
+[[ -n "$PARTITION" ]] && SBATCH+=(--partition="$PARTITION")
+[[ -n "$ACCOUNT" ]] && SBATCH+=(--account="$ACCOUNT")
+SBATCH+=(--wrap='trap "exit 0" TERM INT; while :; do sleep 3600; done')
+
+REMOTE_CMD=""
+for arg in "${SBATCH[@]}"; do
+  printf -v escaped '%q' "$arg"
+  REMOTE_CMD+="${escaped} "
+done
+
+LOGIN_TARGET="${HPC_USER}@${HPC_HOST}"
+
+echo "Requesting a compute node via ${LOGIN_TARGET}..."
+JOB_ID="$(ssh "$LOGIN_TARGET" "$REMOTE_CMD")"
+JOB_ID="${JOB_ID%%;*}"
+if [[ ! "$JOB_ID" =~ ^[0-9]+$ ]]; then
+  echo "Slurm did not return a job ID: $JOB_ID" >&2
+  exit 1
+fi
+echo "Job ${JOB_ID} submitted; waiting for a node (Ctrl-C will not cancel it)."
+
+NODE=""
+STATE=""
+while :; do
+  INFO="$(ssh "$LOGIN_TARGET" "squeue --noheader --jobs=${JOB_ID} --format='%T %N'" | head -n 1 || true)"
+  if [[ -z "$INFO" ]]; then
+    echo "Job ${JOB_ID} disappeared before an allocation was available." >&2
+    exit 1
+  fi
+  STATE="${INFO%% *}"
+  NODE="${INFO#* }"
+  if [[ "$STATE" == "RUNNING" && -n "$NODE" && "$NODE" != "(null)" ]]; then
+    break
+  fi
+  printf '  state: %s\r' "$STATE"
+  sleep 5
+done
+printf '\nAllocated node: %s (job %s)\n' "$NODE" "$JOB_ID"
+
+echo "Opening VS Code on ${NODE}..."
+code --remote "ssh-remote+${NODE}" "$FOLDER"
+
+cat <<EOF
+
+When you are done, release the allocation:
+  ssh ${LOGIN_TARGET} scancel ${JOB_ID}
+EOF
