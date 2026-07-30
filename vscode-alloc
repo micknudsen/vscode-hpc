@@ -17,7 +17,7 @@ FOLDER=""
 
 usage() {
   cat <<'EOF'
-Usage: vscode-alloc [options]
+Usage: vscode-alloc [options] FOLDER
 
 Request an interactive-style Slurm allocation, wait for its compute node, and
 open FOLDER in a VS Code Remote-SSH window.
@@ -28,7 +28,6 @@ Options:
   --mem SIZE            Override HPC_VSCODE_MEMORY
   --partition NAME      Override HPC_VSCODE_PARTITION
   --account NAME        Override HPC_VSCODE_ACCOUNT
-  --folder PATH         REQUIRED: HPC folder to open
   --help                Show this help
 
 Required environment variables:
@@ -45,8 +44,8 @@ Optional environment variables:
 Examples:
   export HPC_VSCODE_HOST=login.hpc.example HPC_VSCODE_USER=my-username
   export HPC_VSCODE_TIME=04:00:00 HPC_VSCODE_CPUS=4 HPC_VSCODE_MEMORY=8G
-  vscode-alloc --folder /home/me/project
-  vscode-alloc --time 02:00:00 --folder /home/me/project
+  vscode-alloc /home/me/project
+  vscode-alloc --time 02:00:00 /home/me/project
 EOF
 }
 
@@ -57,18 +56,31 @@ while [[ $# -gt 0 ]]; do
     --mem) MEMORY="$2"; shift 2 ;;
     --partition) PARTITION="$2"; shift 2 ;;
     --account) ACCOUNT="$2"; shift 2 ;;
-    --folder) FOLDER="$2"; shift 2 ;;
     --help|-h) usage; exit 0 ;;
-    *) echo "Unknown option: $1" >&2; usage >&2; exit 2 ;;
+    --) shift; break ;;
+    -*) echo "Unknown option: $1" >&2; usage >&2; exit 2 ;;
+    *)
+      [[ -z "$FOLDER" ]] || { echo "Only one folder argument is allowed." >&2; usage >&2; exit 2; }
+      FOLDER="$1"
+      shift
+      ;;
   esac
 done
+
+if [[ $# -gt 0 ]]; then
+  [[ -z "$FOLDER" ]] || { echo "Only one folder argument is allowed." >&2; usage >&2; exit 2; }
+  FOLDER="$1"
+  shift
+fi
+
+[[ $# -eq 0 ]] || { echo "Only one folder argument is allowed." >&2; usage >&2; exit 2; }
 
 [[ -n "$HPC_HOST" ]] || { echo "Missing required environment variable: HPC_VSCODE_HOST" >&2; exit 2; }
 [[ -n "$HPC_USER" ]] || { echo "Missing required environment variable: HPC_VSCODE_USER" >&2; exit 2; }
 [[ -n "$TIME" ]] || { echo "Missing required environment variable: HPC_VSCODE_TIME" >&2; exit 2; }
 [[ -n "$CPUS" ]] || { echo "Missing required environment variable: HPC_VSCODE_CPUS" >&2; exit 2; }
 [[ -n "$MEMORY" ]] || { echo "Missing required environment variable: HPC_VSCODE_MEMORY" >&2; exit 2; }
-[[ -n "$FOLDER" ]] || { echo "--folder is required and must be a path on the HPC filesystem." >&2; exit 2; }
+[[ -n "$FOLDER" ]] || { echo "A folder argument is required and must be a path on the HPC filesystem." >&2; exit 2; }
 
 if ! command -v code >/dev/null 2>&1; then
   echo "The VS Code 'code' command is not on PATH." >&2

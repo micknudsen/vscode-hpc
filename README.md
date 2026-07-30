@@ -106,7 +106,7 @@ source ~/.zshrc
 Run the command locally, with a folder path that exists on the HPC filesystem:
 
 ```bash
-vscode-alloc --folder /home/my-username/projects/analysis
+vscode-alloc /home/my-username/projects/analysis
 ```
 
 The helper submits a lightweight job which holds one compute-node allocation,
@@ -122,7 +122,7 @@ vscode-alloc \
   --cpus 2 \
   --mem 4G \
   --partition short \
-  --folder /home/my-username/projects/analysis
+  /home/my-username/projects/analysis
 ```
 
 ## Finish and release resources
