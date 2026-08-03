@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# Cancel this user's Slurm jobs named "vscode" on the configured HPC.
+#
+# Configuration is supplied through the same HPC_VSCODE_* environment variables
+# as vscode-alloc. See --help for a setup example.
+
+set -euo pipefail
+
+HPC_HOST="${HPC_VSCODE_HOST:-}"
+HPC_USER="${HPC_VSCODE_USER:-}"
+DRY_RUN=0
+
+usage() {
+  cat <<'EOF'
+Usage: vscode-cancel [--dry-run]
+
+Cancel all of your Slurm jobs named "vscode" on the configured HPC login node.
+
+Options:
+  --dry-run  List matching jobs without cancelling them
+  --help     Show this help
+
+Required environment variables:
+  HPC_VSCODE_HOST  Hostname of the HPC login node
+  HPC_VSCODE_USER  Username used to log in to the HPC
+
+Example:
+  export HPC_VSCODE_HOST=login.hpc.example HPC_VSCODE_USER=my-username
+  vscode-cancel
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --dry-run) DRY_RUN=1; shift ;;
+    --help|-h) usage; exit 0 ;;
+    -*) echo "Unknown option: $1" >&2; usage >&2; exit 2 ;;
+    *) echo "Unexpected argument: $1" >&2; usage >&2; exit 2 ;;
+  esac
+done
+
+[[ -n "$HPC_HOST" ]] || { echo "Missing required environment variable: HPC_VSCODE_HOST" >&2; exit 2; }
+[[ -n "$HPC_USER" ]] || { echo "Missing required environment variable: HPC_VSCODE_USER" >&2; exit 2; }
+
+LOGIN_TARGET="${HPC_USER}@${HPC_HOST}"
+JOBS="$(ssh "$LOGIN_TARGET" "squeue --me --name=vscode --noheader --format='%i %T %N'" || true)"
+
+if [[ -z "$JOBS" ]]; then
+  echo "No Slurm jobs named 'vscode' found for ${LOGIN_TARGET}."
+  exit 0
+fi
+
+echo "Matching Slurm jobs on ${LOGIN_TARGET}:"
+printf '%s\n' "$JOBS"
+
+if [[ "$DRY_RUN" -eq 1 ]]; then
+  echo "Dry run: no jobs cancelled."
+  exit 0
+fi
+
+JOB_IDS="$(awk '{print $1}' <<<"$JOBS")"
+echo "Cancelling job IDs: $(tr '\n' ' ' <<<"$JOB_IDS")"
+ssh "$LOGIN_TARGET" "scancel $JOB_IDS"
