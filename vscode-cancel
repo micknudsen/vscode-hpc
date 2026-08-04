@@ -58,6 +58,9 @@ if [[ "$DRY_RUN" -eq 1 ]]; then
   exit 0
 fi
 
-JOB_IDS="$(awk '{print $1}' <<<"$JOBS")"
-echo "Cancelling job IDs: $(tr '\n' ' ' <<<"$JOB_IDS")"
-ssh "$LOGIN_TARGET" "scancel $JOB_IDS"
+JOB_IDS=()
+while IFS= read -r job_id; do
+  JOB_IDS+=("$job_id")
+done < <(awk '{print $1}' <<<"$JOBS")
+echo "Cancelling job IDs: ${JOB_IDS[*]}"
+ssh "$LOGIN_TARGET" scancel "${JOB_IDS[@]}"
