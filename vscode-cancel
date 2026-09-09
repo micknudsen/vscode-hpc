@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Cancel this user's Slurm jobs named "vscode" on the configured HPC.
 #
-# Configuration is supplied through the same HPC_VSCODE_* environment variables
-# as vscode-alloc. See --help for a setup example.
+# Configuration is supplied through the same VSCODE_HPC_* environment variables
+# as vscode-hpc. See --help for a setup example.
 
 set -euo pipefail
 
-HPC_HOST="${HPC_VSCODE_HOST:-}"
-HPC_USER="${HPC_VSCODE_USER:-}"
+HPC_HOST="${VSCODE_HPC_HOST:-}"
+HPC_USER="${VSCODE_HPC_USER:-}"
 DRY_RUN=0
 
 usage() {
@@ -21,11 +21,11 @@ Options:
   --help     Show this help
 
 Required environment variables:
-  HPC_VSCODE_HOST  Hostname of the HPC login node
-  HPC_VSCODE_USER  Username used to log in to the HPC
+  VSCODE_HPC_HOST  Hostname of the HPC login node
+  VSCODE_HPC_USER  Username used to log in to the HPC
 
 Example:
-  export HPC_VSCODE_HOST=login.hpc.example HPC_VSCODE_USER=my-username
+  export VSCODE_HPC_HOST=login.hpc.example VSCODE_HPC_USER=my-username
   vscode-cancel
 EOF
 }
@@ -39,8 +39,8 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-[[ -n "$HPC_HOST" ]] || { echo "Missing required environment variable: HPC_VSCODE_HOST" >&2; exit 2; }
-[[ -n "$HPC_USER" ]] || { echo "Missing required environment variable: HPC_VSCODE_USER" >&2; exit 2; }
+[[ -n "$HPC_HOST" ]] || { echo "Missing required environment variable: VSCODE_HPC_HOST" >&2; exit 2; }
+[[ -n "$HPC_USER" ]] || { echo "Missing required environment variable: VSCODE_HPC_USER" >&2; exit 2; }
 
 LOGIN_TARGET="${HPC_USER}@${HPC_HOST}"
 JOBS="$(ssh "$LOGIN_TARGET" "squeue --me --name=vscode --noheader --format='%i %T %N'" || true)"

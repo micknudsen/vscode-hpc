@@ -1,51 +1,51 @@
 #!/usr/bin/env bash
 # Allocate one Slurm compute node and open it with VS Code Remote-SSH.
 #
-# Configuration is supplied entirely through HPC_VSCODE_* environment variables.
+# Configuration is supplied entirely through VSCODE_HPC_* environment variables.
 # See --help for the required variables and a setup example.
 
 set -euo pipefail
 
-HPC_HOST="${HPC_VSCODE_HOST:-}"
-HPC_USER="${HPC_VSCODE_USER:-}"
-TIME="${HPC_VSCODE_TIME:-}"
-CPUS="${HPC_VSCODE_CPUS:-}"
-MEMORY="${HPC_VSCODE_MEMORY:-}"
-PARTITION="${HPC_VSCODE_PARTITION:-}"
-ACCOUNT="${HPC_VSCODE_ACCOUNT:-}"
+HPC_HOST="${VSCODE_HPC_HOST:-}"
+HPC_USER="${VSCODE_HPC_USER:-}"
+TIME="${VSCODE_HPC_TIME:-}"
+CPUS="${VSCODE_HPC_CPUS:-}"
+MEMORY="${VSCODE_HPC_MEMORY:-}"
+PARTITION="${VSCODE_HPC_PARTITION:-}"
+ACCOUNT="${VSCODE_HPC_ACCOUNT:-}"
 FOLDER=""
 
 usage() {
   cat <<'EOF'
-Usage: vscode-alloc [options] FOLDER
+Usage: vscode-hpc [options] FOLDER
 
 Request an interactive-style Slurm allocation, wait for its compute node, and
 open FOLDER in a VS Code Remote-SSH window.
 
 Options:
-  --time HH:MM:SS       Override HPC_VSCODE_TIME
-  --cpus N              Override HPC_VSCODE_CPUS
-  --mem SIZE            Override HPC_VSCODE_MEMORY
-  --partition NAME      Override HPC_VSCODE_PARTITION
-  --account NAME        Override HPC_VSCODE_ACCOUNT
+  --time HH:MM:SS       Override VSCODE_HPC_TIME
+  --cpus N              Override VSCODE_HPC_CPUS
+  --mem SIZE            Override VSCODE_HPC_MEMORY
+  --partition NAME      Override VSCODE_HPC_PARTITION
+  --account NAME        Override VSCODE_HPC_ACCOUNT
   --help                Show this help
 
 Required environment variables:
-  HPC_VSCODE_HOST       Hostname of the HPC login node
-  HPC_VSCODE_USER       Username used to log in to the HPC
-  HPC_VSCODE_TIME       Slurm wall time, e.g. 04:00:00
-  HPC_VSCODE_CPUS       CPUs per task, e.g. 4
-  HPC_VSCODE_MEMORY     Memory request, e.g. 8G
+  VSCODE_HPC_HOST       Hostname of the HPC login node
+  VSCODE_HPC_USER       Username used to log in to the HPC
+  VSCODE_HPC_TIME       Slurm wall time, e.g. 04:00:00
+  VSCODE_HPC_CPUS       CPUs per task, e.g. 4
+  VSCODE_HPC_MEMORY     Memory request, e.g. 8G
 
 Optional environment variables:
-  HPC_VSCODE_PARTITION  Slurm partition
-  HPC_VSCODE_ACCOUNT    Slurm account/project
+  VSCODE_HPC_PARTITION  Slurm partition
+  VSCODE_HPC_ACCOUNT    Slurm account/project
 
 Examples:
-  export HPC_VSCODE_HOST=login.hpc.example HPC_VSCODE_USER=my-username
-  export HPC_VSCODE_TIME=04:00:00 HPC_VSCODE_CPUS=4 HPC_VSCODE_MEMORY=8G
-  vscode-alloc /home/me/project
-  vscode-alloc --time 02:00:00 /home/me/project
+  export VSCODE_HPC_HOST=login.hpc.example VSCODE_HPC_USER=my-username
+  export VSCODE_HPC_TIME=04:00:00 VSCODE_HPC_CPUS=4 VSCODE_HPC_MEMORY=8G
+  vscode-hpc /home/me/project
+  vscode-hpc --time 02:00:00 /home/me/project
 EOF
 }
 
@@ -75,11 +75,11 @@ fi
 
 [[ $# -eq 0 ]] || { echo "Only one folder argument is allowed." >&2; usage >&2; exit 2; }
 
-[[ -n "$HPC_HOST" ]] || { echo "Missing required environment variable: HPC_VSCODE_HOST" >&2; exit 2; }
-[[ -n "$HPC_USER" ]] || { echo "Missing required environment variable: HPC_VSCODE_USER" >&2; exit 2; }
-[[ -n "$TIME" ]] || { echo "Missing required environment variable: HPC_VSCODE_TIME" >&2; exit 2; }
-[[ -n "$CPUS" ]] || { echo "Missing required environment variable: HPC_VSCODE_CPUS" >&2; exit 2; }
-[[ -n "$MEMORY" ]] || { echo "Missing required environment variable: HPC_VSCODE_MEMORY" >&2; exit 2; }
+[[ -n "$HPC_HOST" ]] || { echo "Missing required environment variable: VSCODE_HPC_HOST" >&2; exit 2; }
+[[ -n "$HPC_USER" ]] || { echo "Missing required environment variable: VSCODE_HPC_USER" >&2; exit 2; }
+[[ -n "$TIME" ]] || { echo "Missing required environment variable: VSCODE_HPC_TIME" >&2; exit 2; }
+[[ -n "$CPUS" ]] || { echo "Missing required environment variable: VSCODE_HPC_CPUS" >&2; exit 2; }
+[[ -n "$MEMORY" ]] || { echo "Missing required environment variable: VSCODE_HPC_MEMORY" >&2; exit 2; }
 [[ -n "$FOLDER" ]] || { echo "A folder argument is required and must be a path on the HPC filesystem." >&2; exit 2; }
 
 if ! command -v code >/dev/null 2>&1; then

@@ -1,6 +1,6 @@
 # VS Code on Slurm compute nodes
 
-The script `vscode-alloc` reserves a Slurm compute node and opens an HPC folder on that
+The script `vscode-hpc` reserves a Slurm compute node and opens an HPC folder on that
 node using VS Code Remote-SSH. This moves the VS Code server, extensions,
 terminals, language servers, and indexers off the login/frontend node.
 
@@ -15,13 +15,13 @@ terminals, language servers, and indexers off the login/frontend node.
 
 ## Install
 
-Put `vscode-alloc` somewhere on your local machine, make it executable, and
+Put `vscode-hpc` somewhere on your local machine, make it executable, and
 place that directory on your `PATH`:
 
 ```bash
-chmod +x vscode-alloc
+chmod +x vscode-hpc
 mkdir -p ~/bin
-mv vscode-alloc ~/bin/
+mv vscode-hpc ~/bin/
 ```
 
 Add this to `~/.zshrc` (or `~/.bashrc` for Bash) if `~/bin` is not already on
@@ -74,15 +74,15 @@ Set the required environment variables in your local shell profile, such as
 `~/.zshrc`. These are examples only; use values authorized for your cluster.
 
 ```bash
-export HPC_VSCODE_HOST=login.hpc.example.org
-export HPC_VSCODE_USER=my-username
-export HPC_VSCODE_TIME=04:00:00
-export HPC_VSCODE_CPUS=4
-export HPC_VSCODE_MEMORY=8G
+export VSCODE_HPC_HOST=login.hpc.example.org
+export VSCODE_HPC_USER=my-username
+export VSCODE_HPC_TIME=04:00:00
+export VSCODE_HPC_CPUS=4
+export VSCODE_HPC_MEMORY=8G
 
 # Optional; omit either line when your cluster does not require it.
-export HPC_VSCODE_PARTITION=interactive
-export HPC_VSCODE_ACCOUNT=my-project
+export VSCODE_HPC_PARTITION=interactive
+export VSCODE_HPC_ACCOUNT=my-project
 ```
 
 Reload the profile after editing it:
@@ -93,20 +93,20 @@ source ~/.zshrc
 
 | Variable | Meaning | Required |
 | --- | --- | --- |
-| `HPC_VSCODE_HOST` | Login node hostname | Yes |
-| `HPC_VSCODE_USER` | HPC username | Yes |
-| `HPC_VSCODE_TIME` | Slurm wall-time request, e.g. `04:00:00` | Yes |
-| `HPC_VSCODE_CPUS` | CPUs per task | Yes |
-| `HPC_VSCODE_MEMORY` | Slurm memory request, e.g. `8G` | Yes |
-| `HPC_VSCODE_PARTITION` | Slurm partition | No |
-| `HPC_VSCODE_ACCOUNT` | Slurm account/project | No |
+| `VSCODE_HPC_HOST` | Login node hostname | Yes |
+| `VSCODE_HPC_USER` | HPC username | Yes |
+| `VSCODE_HPC_TIME` | Slurm wall-time request, e.g. `04:00:00` | Yes |
+| `VSCODE_HPC_CPUS` | CPUs per task | Yes |
+| `VSCODE_HPC_MEMORY` | Slurm memory request, e.g. `8G` | Yes |
+| `VSCODE_HPC_PARTITION` | Slurm partition | No |
+| `VSCODE_HPC_ACCOUNT` | Slurm account/project | No |
 
 ## Use
 
 Run the command locally, with a folder path that exists on the HPC filesystem:
 
 ```bash
-vscode-alloc /home/my-username/projects/analysis
+vscode-hpc /home/my-username/projects/analysis
 ```
 
 The helper submits a lightweight job which holds one compute-node allocation,
@@ -117,7 +117,7 @@ remains active until it is cancelled or reaches its wall-time limit.
 For one session, override any scheduler default on the command line:
 
 ```bash
-vscode-alloc \
+vscode-hpc \
   --time 01:00:00 \
   --cpus 2 \
   --mem 4G \
@@ -128,7 +128,7 @@ vscode-alloc \
 ## Finish and release resources
 
 When you are finished, disconnect the VS Code remote window and run the
-`scancel` command printed by `vscode-alloc`, for example:
+`scancel` command printed by `vscode-hpc`, for example:
 
 ```bash
 ssh my-username@login.hpc.example.org scancel 12345678
