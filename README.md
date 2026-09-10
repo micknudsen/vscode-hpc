@@ -131,12 +131,13 @@ When you are finished, disconnect the VS Code remote window and run the
 `vscode-cancel` helper to find and cancel your matching jobs:
 
 ```bash
-vscode-cancel --dry-run
 vscode-cancel
+vscode-cancel JOB_ID
+vscode-cancel --all
 ```
 
 It uses the same `VSCODE_HPC_HOST` and `VSCODE_HPC_USER` environment
-variables as `vscode-hpc` and cancels your Slurm jobs named `vscode`.
+variables as `vscode-hpc` and targets your Slurm jobs named `vscode`.
 
 If you prefer, you can still run the `scancel` command printed by
 `vscode-hpc`, for example:
