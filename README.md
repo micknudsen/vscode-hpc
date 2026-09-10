@@ -154,33 +154,3 @@ ssh my-username@login.hpc.example.org scancel JOB_ID
 
 Always release the allocation when finished. The allocated CPUs and memory are
 reserved while VS Code is connected and until the job ends.
-
-## Troubleshooting
-
-**`The VS Code 'code' command is not on PATH`**
-
-Run VS Code’s **Shell Command: Install 'code' command in PATH**, then open a
-new terminal.
-
-**The job stays pending**
-
-Inspect its scheduler reason:
-
-```bash
-ssh my-username@login.hpc.example.org squeue --me -o "%.18i %.2t %.20R"
-```
-
-Choose a less busy partition, reduce the requested resources or wall time, or
-wait for capacity according to local HPC policy.
-
-**VS Code cannot connect after a node is allocated**
-
-First verify the SSH route manually with `ssh cn-NODE`. Check that the compute
-node pattern in `~/.ssh/config` matches the actual node name and that
-`ProxyJump` contains the right login hostname and username.
-
-**The login node still becomes busy**
-
-Make sure the VS Code status bar identifies the compute node (for example,
-`SSH: cn-123`), rather than the login node. Also confirm that the folder was
-opened in that remote window, not in a separate login-node window.
