@@ -15,13 +15,13 @@ terminals, language servers, and indexers off the login/frontend node.
 
 ## Install
 
-Put `vscode-hpc` somewhere on your local machine, make it executable, and
-place that directory on your `PATH`:
+Put `vscode-hpc` and `vscode-cancel` somewhere on your local machine, make
+them executable, and place that directory on your `PATH`:
 
 ```bash
-chmod +x vscode-hpc
+chmod +x vscode-hpc vscode-cancel
 mkdir -p ~/bin
-mv vscode-hpc ~/bin/
+mv vscode-hpc vscode-cancel ~/bin/
 ```
 
 Add this to `~/.zshrc` (or `~/.bashrc` for Bash) if `~/bin` is not already on
@@ -128,7 +128,18 @@ vscode-hpc \
 ## Finish and release resources
 
 When you are finished, disconnect the VS Code remote window and run the
-`scancel` command printed by `vscode-hpc`, for example:
+`vscode-cancel` helper to find and cancel your matching jobs:
+
+```bash
+vscode-cancel --dry-run
+vscode-cancel
+```
+
+It uses the same `VSCODE_HPC_HOST` and `VSCODE_HPC_USER` environment
+variables as `vscode-hpc` and cancels your Slurm jobs named `vscode`.
+
+If you prefer, you can still run the `scancel` command printed by
+`vscode-hpc`, for example:
 
 ```bash
 ssh my-username@login.hpc.example.org scancel 12345678
