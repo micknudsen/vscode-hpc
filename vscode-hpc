@@ -193,6 +193,8 @@ cancel_main() {
   local LOGIN_TARGET=""
   local JOBS=""
   local JOB_IDS=()
+  local JOBS_FILE=""
+  local HAS_JOBS=0
   local job_id=""
   local ssh_status=0
 
@@ -225,14 +227,23 @@ cancel_main() {
   fi
 
   LOGIN_TARGET="${HPC_USER}@${HPC_HOST}"
+  JOBS_FILE="$(mktemp)"
   set +e
-  JOBS="$(ssh "$LOGIN_TARGET" "squeue --me --name=vscode --noheader --format='%i %T %N'")"
+  ssh "$LOGIN_TARGET" "squeue --me --name=vscode --noheader --format='%i %T %N'" >"$JOBS_FILE"
   ssh_status=$?
   set -e
-  [[ "$ssh_status" -eq 0 ]] || exit "$ssh_status"
+  if [[ "$ssh_status" -ne 0 ]]; then
+    rm -f "$JOBS_FILE"
+    exit "$ssh_status"
+  fi
+  if [[ -s "$JOBS_FILE" ]]; then
+    HAS_JOBS=1
+    JOBS="$(cat "$JOBS_FILE")"
+  fi
+  rm -f "$JOBS_FILE"
 
   if [[ "$MODE" == "list" ]]; then
-    if [[ -z "$JOBS" ]]; then
+    if [[ "$HAS_JOBS" -eq 0 ]]; then
       echo "No Slurm jobs named 'vscode' found for ${LOGIN_TARGET}."
       exit 0
     fi
@@ -255,7 +266,7 @@ cancel_main() {
     exit 0
   fi
 
-  if [[ -z "$JOBS" ]]; then
+  if [[ "$HAS_JOBS" -eq 0 ]]; then
     echo "No Slurm jobs named 'vscode' found for ${LOGIN_TARGET}."
     exit 0
   fi
