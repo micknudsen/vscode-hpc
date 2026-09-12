@@ -312,6 +312,10 @@ case "$1" in
     main_usage
     ;;
   *)
-    open_main "$1" "${@:2}"
+    if [[ "$1" == -* ]]; then
+      open_main "$@"
+    else
+      open_main "$1" "${@:2}"
+    fi
     ;;
 esac
