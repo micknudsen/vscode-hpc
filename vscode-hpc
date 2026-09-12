@@ -289,6 +289,6 @@ case "$1" in
     main_usage
     ;;
   *)
-    open_main "$@"
+    open_main "$1" "${@:2}"
     ;;
 esac
