@@ -194,7 +194,6 @@ cancel_main() {
   local JOBS=""
   local JOB_IDS=()
   local job_id=""
-  local REMOTE_SQUEUE=""
   local ssh_status=0
 
   while [[ $# -gt 0 ]]; do
@@ -221,21 +220,8 @@ cancel_main() {
   [[ -n "$HPC_USER" ]] || { echo "Missing required environment variable: VSCODE_HPC_USER" >&2; exit 2; }
 
   LOGIN_TARGET="${HPC_USER}@${HPC_HOST}"
-  REMOTE_SQUEUE="$(cat <<'EOF'
-output="$(squeue --me --name=vscode --noheader --format='%i %T %N' 2>&1)"
-status=$?
-if [[ "$status" -ne 0 ]]; then
-  if [[ -n "$output" ]]; then
-    printf '%s\n' "$output" >&2
-    exit "$status"
-  fi
-  exit 0
-fi
-printf '%s' "$output"
-EOF
-)"
   set +e
-  JOBS="$(ssh "$LOGIN_TARGET" "bash -lc $(printf '%q' "$REMOTE_SQUEUE")")"
+  JOBS="$(ssh "$LOGIN_TARGET" "squeue --me --name=vscode --noheader --format='%i %T %N'")"
   ssh_status=$?
   set -e
   [[ "$ssh_status" -eq 0 ]] || exit "$ssh_status"
