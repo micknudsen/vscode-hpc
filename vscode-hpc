@@ -289,8 +289,6 @@ case "$1" in
     main_usage
     ;;
   *)
-    echo "Unknown command: $1" >&2
-    main_usage >&2
-    exit 2
+    open_main "$@"
     ;;
 esac
