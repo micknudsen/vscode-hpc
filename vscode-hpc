@@ -300,8 +300,12 @@ case "$1" in
   *)
     if [[ "$1" == -* ]]; then
       open_main "$@"
-    else
+    elif [[ "$1" == */* || "$1" == "." || "$1" == ".." || "$1" == "~"* ]]; then
       open_main "$1" "${@:2}"
+    else
+      echo "Unknown command: $1" >&2
+      main_usage >&2
+      exit 2
     fi
     ;;
 esac
