@@ -305,18 +305,12 @@ case "$1" in
     shift
     cancel_main "$@"
     ;;
-  --)
-    shift
-    open_main "$@"
-    ;;
   --help|-h)
     main_usage
     ;;
   *)
-    if [[ "$1" == -* ]]; then
-      open_main "$@"
-    else
-      open_main "$1" "${@:2}"
-    fi
+    echo "Unknown command: $1" >&2
+    main_usage >&2
+    exit 2
     ;;
 esac

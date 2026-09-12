@@ -115,13 +115,6 @@ waits for Slurm to schedule it, and opens the requested remote folder in VS
 Code. The terminal that launched the command may then be closed; the Slurm job
 remains active until it is cancelled or reaches its wall-time limit.
 
-For compatibility, the previous bare forms still work:
-
-```bash
-vscode-hpc project
-vscode-hpc /home/my-username/projects/analysis
-```
-
 For one session, override any scheduler default on the command line:
 
 ```bash
