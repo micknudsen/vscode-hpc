@@ -1,8 +1,9 @@
 # VS Code on Slurm compute nodes
 
-The script `vscode-hpc` reserves a Slurm compute node and opens an HPC folder on that
-node using VS Code Remote-SSH. This moves the VS Code server, extensions,
-terminals, language servers, and indexers off the login/frontend node.
+The script `vscode-hpc` reserves a Slurm compute node and opens an HPC folder on
+that node using VS Code Remote-SSH. It can also cancel the matching Slurm jobs
+that it creates. This moves the VS Code server, extensions, terminals,
+language servers, and indexers off the login/frontend node.
 
 ## Requirements
 
@@ -15,13 +16,13 @@ terminals, language servers, and indexers off the login/frontend node.
 
 ## Install
 
-Put `vscode-hpc` and `vscode-cancel` somewhere on your local machine, make
-them executable, and place that directory on your `PATH`:
+Put `vscode-hpc` somewhere on your local machine, make it executable, and place
+that directory on your `PATH`:
 
 ```bash
-chmod +x vscode-hpc vscode-cancel
+chmod +x vscode-hpc
 mkdir -p ~/bin
-mv vscode-hpc vscode-cancel ~/bin/
+mv vscode-hpc ~/bin/
 ```
 
 Add this to `~/.zshrc` (or `~/.bashrc` for Bash) if `~/bin` is not already on
@@ -106,7 +107,7 @@ source ~/.zshrc
 Run the command locally, with a folder path that exists on the HPC filesystem:
 
 ```bash
-vscode-hpc /home/my-username/projects/analysis
+vscode-hpc open /home/my-username/projects/analysis
 ```
 
 The helper submits a lightweight job which holds one compute-node allocation,
@@ -117,7 +118,7 @@ remains active until it is cancelled or reaches its wall-time limit.
 For one session, override any scheduler default on the command line:
 
 ```bash
-vscode-hpc \
+vscode-hpc open \
   --time 01:00:00 \
   --cpus 2 \
   --mem 4G \
@@ -127,17 +128,17 @@ vscode-hpc \
 
 ## Finish and release resources
 
-When you are finished, disconnect the VS Code remote window and run the
-`vscode-cancel` helper to find and cancel your matching jobs:
+When you are finished, disconnect the VS Code remote window and run
+`vscode-hpc cancel` to find and cancel your matching jobs:
 
 ```bash
-vscode-cancel
-vscode-cancel JOB_ID
-vscode-cancel --all
+vscode-hpc cancel
+vscode-hpc cancel JOB_ID
+vscode-hpc cancel --all
 ```
 
 It uses the same `VSCODE_HPC_HOST` and `VSCODE_HPC_USER` environment
-variables as `vscode-hpc` and targets your Slurm jobs named `vscode`.
+variables as `vscode-hpc open` and targets your Slurm jobs named `vscode`.
 
 If you prefer, you can still run the `scancel` command printed by
 `vscode-hpc`, for example:
