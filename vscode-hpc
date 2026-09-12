@@ -285,6 +285,10 @@ case "$1" in
     shift
     cancel_main "$@"
     ;;
+  --)
+    shift
+    open_main "$@"
+    ;;
   --help|-h)
     main_usage
     ;;
