@@ -292,6 +292,7 @@ EOF
 
 if [[ $# -eq 0 ]]; then
   open_main "$@"
+  exit $?
 fi
 
 case "$1" in
