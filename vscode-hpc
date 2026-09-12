@@ -200,7 +200,11 @@ cancel_main() {
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --all) CANCEL_ALL=1; shift ;;
+      --all)
+        [[ -z "$TARGET_JOB_ID" ]] || { echo "Cannot use --all with a job ID argument." >&2; cancel_usage >&2; exit 2; }
+        CANCEL_ALL=1
+        shift
+        ;;
       --dry-run) DRY_RUN=1; shift ;;
       --help|-h) cancel_usage; exit 0 ;;
       -*) echo "Unknown option: $1" >&2; cancel_usage >&2; exit 2 ;;
