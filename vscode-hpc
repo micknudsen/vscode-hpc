@@ -240,9 +240,9 @@ cancel_main() {
     rm -f "$JOBS_FILE"
     exit "$ssh_status"
   fi
-  if [[ -s "$JOBS_FILE" ]]; then
+  JOBS="$(awk 'NF == 3 && $1 ~ /^[0-9]+(_[0-9]+|_\[[0-9,-]+\])?$/ { print }' "$JOBS_FILE")"
+  if [[ -n "$JOBS" ]]; then
     HAS_JOBS=1
-    JOBS="$(cat "$JOBS_FILE")"
   fi
   rm -f "$JOBS_FILE"
 
