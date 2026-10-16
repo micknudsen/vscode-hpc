@@ -179,7 +179,7 @@ open_main() {
   cat <<EOF
 
 When you are done, release the allocation:
-  ssh ${LOGIN_TARGET} scancel ${JOB_ID}
+  vscode-hpc cancel ${JOB_ID}
 EOF
 }
 
