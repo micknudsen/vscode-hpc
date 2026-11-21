@@ -17,7 +17,14 @@ language servers, and indexers off the login/frontend node.
 
 ## Install
 
-Install from a checkout while the first Conda release is being prepared:
+Install from the `micknudsen` Conda channel:
+
+```bash
+conda create -n vscode-hpc --override-channels -c micknudsen -c conda-forge vscode-hpc
+conda activate vscode-hpc
+```
+
+Alternatively, install from a checkout:
 
 ```bash
 python3 -m venv .venv
@@ -26,16 +33,9 @@ source .venv/bin/activate
 vscode-hpc --version
 ```
 
-After the first release is published to the `micknudsen` channel, install with:
-
-```bash
-conda create -n vscode-hpc --override-channels -c micknudsen -c conda-forge vscode-hpc
-conda activate vscode-hpc
-```
-
 The Conda package includes Python and OpenSSH dependencies. Install VS Code and
 its Remote-SSH extension separately. Installation is local; no Python helper is
-installed on the cluster. The current packaging work has not published a release.
+installed on the cluster.
 
 If upgrading from the standalone Bash script, remove or rename that old copy
 and use `command -v vscode-hpc` to confirm that the active environment supplies
