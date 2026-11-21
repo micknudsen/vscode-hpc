@@ -1,0 +1,120 @@
+name: Tests
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  product-tests:
+    name: Product tests (${{ matrix.os }}, Python ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-latest]
+        python: ['3.9', '3.14']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install --upgrade pip build
+      - name: Build wheel from source distribution
+        run: python -m build
+      - name: Test clean-installed public CLI
+        run: |
+          python -m venv "$RUNNER_TEMP/product"
+          "$RUNNER_TEMP/product/bin/python" -m pip install --no-deps dist/*.whl
+          export PATH="$RUNNER_TEMP/product/bin:$PATH"
+          python -m unittest discover -s tests -v
+
+  distributions:
+    name: Build distributions
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: conda-incubator/setup-miniconda@v4
+        with:
+          miniforge-version: latest
+          channels: conda-forge
+          conda-remove-defaults: 'true'
+          activate-environment: ''
+      - name: Build wheel and Conda package
+        shell: bash -l {0}
+        run: |
+          conda install -y -n base --override-channels -c conda-forge conda-build conda-index python-build
+          python -m build
+          cp LICENSE dist/LICENSE
+          conda build conda-recipe --override-channels -c conda-forge --no-anaconda-upload --package-format 2 --output-folder "$RUNNER_TEMP/conda-bld"
+          rm dist/LICENSE
+          cp "$RUNNER_TEMP"/conda-bld/noarch/*.conda dist/
+          python scripts/distributions.py record --source "$(git rev-parse HEAD)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: distributions
+          path: dist/
+          if-no-files-found: error
+          retention-days: 30
+
+  conda-tests:
+    name: Conda tests (${{ matrix.os }})
+    needs: distributions
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: distributions
+          path: dist/
+      - uses: conda-incubator/setup-miniconda@v4
+        with:
+          miniforge-version: latest
+          channels: conda-forge
+          conda-remove-defaults: 'true'
+          activate-environment: ''
+      - name: Verify and install the exact built package
+        shell: bash -l {0}
+        run: |
+          python scripts/distributions.py verify --source "$(git rev-parse HEAD)"
+          conda install -y -n base --override-channels -c conda-forge conda-index
+          mkdir -p "$RUNNER_TEMP/channel/noarch"
+          cp dist/*.conda "$RUNNER_TEMP/channel/noarch/"
+          conda index "$RUNNER_TEMP/channel"
+          version=$(python scripts/distributions.py version)
+          conda create -y --prefix "$RUNNER_TEMP/product" --override-channels -c "file://$RUNNER_TEMP/channel" -c conda-forge "vscode-hpc=$version" python=3.14
+          export PATH="$RUNNER_TEMP/product/bin:$PATH"
+          python -m unittest discover -s tests -v
+          ssh -V
+
+  ci-passed:
+    name: CI passed
+    if: always()
+    needs: [product-tests, distributions, conda-tests]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require every test and build job to succeed
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          results = json.loads(os.environ['RESULTS'])
+          failed = {name: job['result'] for name, job in results.items() if job['result'] != 'success'}
+          if failed:
+              raise SystemExit(f'Required jobs did not succeed: {failed}')
+          print('All test and build jobs passed.')
+          PY

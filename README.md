@@ -1,12 +1,13 @@
 # VS Code on Slurm compute nodes
 
-The script `vscode-hpc` reserves a Slurm compute node and opens an HPC folder on
+The `vscode-hpc` Python command reserves a Slurm compute node and opens an HPC folder on
 that node using VS Code Remote-SSH. It can also cancel the matching Slurm jobs
 that it creates. This moves the VS Code server, extensions, terminals,
 language servers, and indexers off the login/frontend node.
 
 ## Requirements
 
+- Linux or macOS with Python 3.9 or newer and OpenSSH on the local machine.
 - A local installation of VS Code with the **Remote - SSH** extension.
 - The `code` command available in your local shell. In VS Code, run
   **Shell Command: Install 'code' command in PATH** if it is missing.
@@ -16,23 +17,29 @@ language servers, and indexers off the login/frontend node.
 
 ## Install
 
-Put `vscode-hpc` somewhere on your local machine, make it executable, and place
-that directory on your `PATH`:
+Install from a checkout while the first Conda release is being prepared:
 
 ```bash
-chmod +x vscode-hpc
-mkdir -p ~/bin
-mv vscode-hpc ~/bin/
+python3 -m venv .venv
+.venv/bin/python -m pip install .
+source .venv/bin/activate
+vscode-hpc --version
 ```
 
-Add this to `~/.zshrc` (or `~/.bashrc` for Bash) if `~/bin` is not already on
-your path:
+After the first release is published to the `micknudsen` channel, install with:
 
 ```bash
-export PATH="$HOME/bin:$PATH"
+conda create -n vscode-hpc --override-channels -c micknudsen -c conda-forge vscode-hpc
+conda activate vscode-hpc
 ```
 
-Open a new terminal, or run `source ~/.zshrc`.
+The Conda package includes Python and OpenSSH dependencies. Install VS Code and
+its Remote-SSH extension separately. Installation is local; no Python helper is
+installed on the cluster. The current packaging work has not published a release.
+
+If upgrading from the standalone Bash script, remove or rename that old copy
+and use `command -v vscode-hpc` to confirm that the active environment supplies
+the command. Existing commands and `VSCODE_HPC_*` defaults still apply.
 
 ## Configure SSH
 
@@ -135,10 +142,17 @@ When you are finished, disconnect the VS Code remote window and run
 vscode-hpc cancel
 vscode-hpc cancel JOB_ID
 vscode-hpc cancel --all
+vscode-hpc cancel --dry-run --all
 ```
 
 It uses the same `VSCODE_HPC_HOST` and `VSCODE_HPC_USER` environment
 variables as `vscode-hpc open` and targets your Slurm jobs named `vscode`.
+Without a job ID or `--all`, `cancel` only lists matching jobs. `--dry-run`
+previews cancellation without changing jobs.
+
+Interrupting `open` does not cancel a submitted job. If startup or the VS Code
+launch fails after submission, the command reports the job ID and cancellation
+command so you can release the allocation explicitly.
 
 If you prefer, you can still run the `scancel` command printed by
 `vscode-hpc`, for example:
@@ -156,3 +170,12 @@ ssh my-username@login.hpc.example.org scancel JOB_ID
 
 Always release the allocation when finished. The allocated CPUs and memory are
 reserved while VS Code is connected and until the job ends.
+
+## Development
+
+Contributions go through pull requests to protected `master`, with required CI,
+squash merges and linear history. See [Contributing](.github/CONTRIBUTING.md) for
+local verification and the merge policy, and [Releasing](docs/releasing.md) for
+Conda publication. CI exercises the installed CLI with simulated SSH, Slurm and
+VS Code peers on Linux and macOS; real-cluster qualification remains a separate
+release check.

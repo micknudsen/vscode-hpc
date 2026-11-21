@@ -1,0 +1,75 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  identity:
+    name: Verify release source
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Require a versioned commit on protected master
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          git merge-base --is-ancestor HEAD origin/master
+          version=$(python3 scripts/distributions.py version)
+          test "$TAG" = "v$version"
+          test -f "docs/releases/$TAG.md"
+
+  qualification:
+    needs: identity
+    uses: ./.github/workflows/tests.yml
+
+  publish:
+    name: Publish qualified distributions
+    needs: [identity, qualification]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: distributions
+          path: dist/
+      - uses: conda-incubator/setup-miniconda@v4
+        with:
+          miniforge-version: latest
+          channels: conda-forge
+          conda-remove-defaults: 'true'
+          activate-environment: ''
+      - name: Verify and upload the tested package
+        shell: bash -l {0}
+        env:
+          TAG: ${{ github.ref_name }}
+          ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_API_TOKEN }}
+        run: |
+          test -n "$ANACONDA_API_TOKEN"
+          python scripts/distributions.py verify --source "$(git rev-parse HEAD)" --tag "$TAG"
+          conda install -y -n base --override-channels -c conda-forge anaconda-client
+          anaconda upload --user micknudsen --label main dist/*.conda
+      - name: Verify installation from the published channel
+        shell: bash -l {0}
+        run: |
+          version=$(python scripts/distributions.py version)
+          conda create -y --prefix "$RUNNER_TEMP/published" --override-channels -c micknudsen -c conda-forge "vscode-hpc=$version"
+          export PATH="$RUNNER_TEMP/published/bin:$PATH"
+          python -m unittest discover -s tests -v
+      - name: Create GitHub release with the same tested artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: gh release create "$TAG" dist/* --verify-tag --title "$TAG" --notes-file "docs/releases/$TAG.md"

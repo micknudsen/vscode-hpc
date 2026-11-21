@@ -1,0 +1,39 @@
+{% set version = "0.1.0" %}
+
+package:
+  name: vscode-hpc
+  version: {{ version }}
+
+# CI builds the wheel from the source distribution, then packages those bytes.
+source:
+  path: ../dist
+
+build:
+  number: 0
+  noarch: python
+  entry_points:
+    - vscode-hpc = vscode_hpc.cli:main
+  script: {{ PYTHON }} -m pip install vscode_hpc-{{ version }}-py3-none-any.whl --no-deps --no-index
+
+requirements:
+  host:
+    - python >=3.9
+    - pip
+  run:
+    - python >=3.9
+    - openssh
+
+test:
+  imports:
+    - vscode_hpc
+  commands:
+    - vscode-hpc --version
+    - vscode-hpc --help
+    - vscode-hpc open --help
+    - vscode-hpc cancel --help
+
+about:
+  home: https://github.com/micknudsen/vscode-hpc
+  license: MIT
+  license_file: LICENSE
+  summary: Open VS Code on a Slurm compute node through SSH
