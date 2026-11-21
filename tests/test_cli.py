@@ -97,9 +97,24 @@ class InstalledCLI(unittest.TestCase):
         self.assertEqual(self.calls("code")[0][-1], "-project")
 
     def test_pending_allocation_eventually_opens(self):
-        self.configure(queue=["PENDING (null)", "RUNNING cn-2"])
+        self.configure(queue=["PENDING|(null)", "RUNNING|cn-2"])
         self.assertIn("state: PENDING", self.run_cli("open", "/project").stdout)
         self.assertEqual(self.calls("code")[0][1], "ssh-remote+cn-2")
+
+    def test_pending_without_node_eventually_opens(self):
+        self.configure(queue=["PENDING|", "RUNNING|cn-2"])
+        self.assertIn("state: PENDING", self.run_cli("open", "/project").stdout)
+        self.assertEqual(self.calls("code"), [["--remote", "ssh-remote+cn-2", "/project"]])
+
+    def test_running_without_node_keeps_waiting(self):
+        self.configure(queue=["RUNNING|", "RUNNING|cn-2"])
+        self.run_cli("open", "/project")
+        self.assertEqual(self.calls("code"), [["--remote", "ssh-remote+cn-2", "/project"]])
+
+    def test_pending_without_node_can_be_cancelled(self):
+        self.configure(jobs="12345|PENDING|")
+        self.run_cli("cancel", "12345")
+        self.assertEqual(self.calls()[-1], ["scancel", "12345"])
 
     def test_missing_required_configuration_fails_before_ssh(self):
         for name in ("HOST", "USER", "TIME", "CPUS", "MEMORY"):
@@ -167,12 +182,12 @@ class InstalledCLI(unittest.TestCase):
         self.assertEqual(self.calls("code"), [])
 
     def test_terminal_job_state_stops_waiting(self):
-        self.configure(queue=["FAILED cn-1"])
+        self.configure(queue=["FAILED|cn-1"])
         self.assertIn("state FAILED", self.run_cli("open", "/project", status=1).stderr)
         self.assertEqual(self.calls("code"), [])
 
     def test_malformed_queue_response_does_not_open_vscode(self):
-        self.configure(queue=["Unexpected banner\nRUNNING cn-1"])
+        self.configure(queue=["Unexpected banner\nRUNNING|cn-1"])
         self.run_cli("open", "/project", status=1)
         self.assertEqual(self.calls("code"), [])
 
@@ -183,7 +198,7 @@ class InstalledCLI(unittest.TestCase):
         self.assertFalse(any(c[0] == "scancel" for c in self.calls()))
 
     def test_interrupt_keeps_allocation_and_reports_cleanup(self):
-        self.configure(queue_delay=1, queue=["PENDING (null)"])
+        self.configure(queue_delay=1, queue=["PENDING|(null)"])
         process = subprocess.Popen(
             [self.cli, "open", "/project"], env=self.env, cwd=self.root,
             text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True,
@@ -217,7 +232,7 @@ class InstalledCLI(unittest.TestCase):
         self.assertEqual(self.calls()[-1], ["scancel", "12345"])
 
     def test_cancel_all_filters_banners_and_keeps_array_ids(self):
-        self.configure(jobs="Welcome to HPC\n12345 RUNNING cn-1\n42_3 RUNNING cn-2\n42_[4-9%2] PENDING (null)\n123 junk\n")
+        self.configure(jobs="Welcome to HPC\n12345|RUNNING|cn-1\n42_3|RUNNING|cn-2\n42_[4-9%2]|PENDING|\n123 junk\n")
         self.run_cli("cancel", "--all")
         self.assertEqual(self.calls()[-1], ["scancel", "12345", "42_3", "42_[4-9%2]"])
 

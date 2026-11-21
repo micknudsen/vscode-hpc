@@ -96,7 +96,7 @@ def open_folder(args: argparse.Namespace, slurm: Slurm) -> None:
             job = slurm.allocation(job_id)
             if job is None:
                 raise CommandError(f"Job {job_id} disappeared before an allocation was available.")
-            if job.state == "RUNNING" and job.node not in ("(null)", "None", "(None)"):
+            if job.state == "RUNNING" and job.node and job.node not in ("(null)", "None", "(None)"):
                 break
             if job.state not in ("PENDING", "CONFIGURING", "RUNNING", "REQUEUED", "REQUEUE_FED"):
                 raise CommandError(f"Job {job_id} cannot start in state {job.state}.")

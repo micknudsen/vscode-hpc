@@ -23,14 +23,16 @@ if state.get("ssh_status"):
 if command[0] == "sbatch":
     print(state.get("submission", "12345;cluster"))
 elif command[0] == "squeue" and "--me" in command:
-    print(state.get("jobs", "12345 RUNNING cn-1\n12346 PENDING (null)"))
+    assert "--format=%i|%T|%N" in command, command
+    print(state.get("jobs", "12345|RUNNING|cn-1\n12346|PENDING|"))
 elif command[0] == "squeue":
     if state.get("queue_status"):
         print("Queue connection lost", file=sys.stderr)
         sys.exit(state["queue_status"])
     if state.get("queue_delay"):
         time.sleep(state["queue_delay"])
-    responses = state.get("queue", ["RUNNING cn-1"])
+    assert "--format=%T|%N" in command, command
+    responses = state.get("queue", ["RUNNING|cn-1"])
     print(responses[0])
     if len(responses) > 1:
         state["queue"] = responses[1:]

@@ -65,24 +65,24 @@ class Slurm:
 
     def allocation(self, job_id: str) -> Optional[Job]:
         response = self.run([
-            "squeue", "--noheader", f"--jobs={job_id}", "--format=%T %N",
+            "squeue", "--noheader", f"--jobs={job_id}", "--format=%T|%N",
         ]).strip()
         if not response:
             return None
-        fields = response.split()
-        if len(fields) != 2:
+        fields = response.split("|")
+        if len(response.splitlines()) != 1 or len(fields) != 2 or not fields[0]:
             raise CommandError(f"Unexpected Slurm allocation response: {response}")
         return Job(job_id, fields[0], fields[1])
 
     def matching_jobs(self) -> List[Job]:
         response = self.run([
-            "squeue", "--me", "--name=vscode", "--noheader", "--format=%i %T %N",
+            "squeue", "--me", "--name=vscode", "--noheader", "--format=%i|%T|%N",
         ])
         jobs = []
         for line in response.splitlines():
-            fields = line.split()
-            # Ignore login banners, retaining only complete Slurm job rows.
-            if len(fields) == 3 and JOB_ID.fullmatch(fields[0]):
+            fields = line.split("|")
+            # Preserve an empty node field while ignoring login banners.
+            if len(fields) == 3 and JOB_ID.fullmatch(fields[0]) and fields[1]:
                 jobs.append(Job(*fields))
         return jobs
 
