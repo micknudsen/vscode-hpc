@@ -1,5 +1,7 @@
 # VS Code on Slurm compute nodes
 
+[![Conda Version](https://img.shields.io/conda/vn/micknudsen/vscode-hpc?style=for-the-badge&cacheSeconds=300)](https://anaconda.org/micknudsen/vscode-hpc) [![Conda Downloads](https://img.shields.io/conda/dn/micknudsen/vscode-hpc?style=for-the-badge&cacheSeconds=300)](https://anaconda.org/micknudsen/vscode-hpc)
+
 The `vscode-hpc` Python command reserves a Slurm compute node and opens an HPC folder on
 that node using VS Code Remote-SSH. It can also cancel the matching Slurm jobs
 that it creates. This moves the VS Code server, extensions, terminals,
@@ -17,7 +19,14 @@ language servers, and indexers off the login/frontend node.
 
 ## Install
 
-Install from a checkout while the first Conda release is being prepared:
+Install from the `micknudsen` Conda channel:
+
+```bash
+conda create -n vscode-hpc --override-channels -c micknudsen -c conda-forge vscode-hpc
+conda activate vscode-hpc
+```
+
+Alternatively, install from a checkout:
 
 ```bash
 python3 -m venv .venv
@@ -26,16 +35,9 @@ source .venv/bin/activate
 vscode-hpc --version
 ```
 
-After the first release is published to the `micknudsen` channel, install with:
-
-```bash
-conda create -n vscode-hpc --override-channels -c micknudsen -c conda-forge vscode-hpc
-conda activate vscode-hpc
-```
-
 The Conda package includes Python and OpenSSH dependencies. Install VS Code and
 its Remote-SSH extension separately. Installation is local; no Python helper is
-installed on the cluster. The current packaging work has not published a release.
+installed on the cluster.
 
 If upgrading from the standalone Bash script, remove or rename that old copy
 and use `command -v vscode-hpc` to confirm that the active environment supplies
