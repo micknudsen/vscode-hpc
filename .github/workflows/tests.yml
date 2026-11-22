@@ -57,7 +57,7 @@ jobs:
           rm dist/LICENSE
           cp "$RUNNER_TEMP"/conda-bld/noarch/*.conda dist/
           python scripts/distributions.py record --source "$(git rev-parse HEAD)"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: distributions
           path: dist/
