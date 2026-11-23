@@ -19,7 +19,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, macos-latest]
-        python: ['3.10', '3.14']
+        python: ['3.10', '3.11', '3.12', '3.13', '3.14']
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
@@ -65,7 +65,7 @@ jobs:
           retention-days: 30
 
   conda-tests:
-    name: Conda tests (${{ matrix.os }})
+    name: Conda tests (${{ matrix.os }}, Python ${{ matrix.python }})
     needs: distributions
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
@@ -73,6 +73,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, macos-latest]
+        python: ['3.10', '3.11', '3.12', '3.13', '3.14']
     steps:
       - uses: actions/checkout@v7
       - uses: actions/download-artifact@v8
@@ -94,7 +95,7 @@ jobs:
           cp dist/*.conda "$RUNNER_TEMP/channel/noarch/"
           conda index "$RUNNER_TEMP/channel"
           version=$(python scripts/distributions.py version)
-          conda create -y --prefix "$RUNNER_TEMP/product" --override-channels -c "file://$RUNNER_TEMP/channel" -c conda-forge "vscode-hpc=$version" python=3.14
+          conda create -y --prefix "$RUNNER_TEMP/product" --override-channels -c "file://$RUNNER_TEMP/channel" -c conda-forge "vscode-hpc=$version" "python=${{ matrix.python }}"
           export PATH="$RUNNER_TEMP/product/bin:$PATH"
           python -m unittest discover -s tests -v
           ssh -V

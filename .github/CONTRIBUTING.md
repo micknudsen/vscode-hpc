@@ -23,12 +23,13 @@ PATH="$PWD/.venv/bin:$PATH" .venv/bin/python -m unittest discover -s tests -v
 ```
 
 Tests invoke the installed public CLI using controlled SSH and VS Code peers;
-they do not submit jobs to a real cluster. CI tests Python 3.10 and 3.14 on Linux
-and macOS, builds the source distribution, wheel and Conda package, then installs
-the same Conda package in fresh Linux and macOS environments and runs the suite.
+they do not submit jobs to a real cluster. CI tests every supported Python minor
+version (3.10 through 3.14) on Linux and macOS, builds the source distribution,
+wheel and Conda package, then installs the same Conda package in fresh Linux and
+macOS environments for each supported Python version and runs the suite.
 
-The required checks are the four **Product tests** matrix jobs, **Build
-distributions**, both **Conda tests** matrix jobs, and **CI passed**. The final
+The required checks are all ten **Product tests** matrix jobs, **Build
+distributions**, all ten **Conda tests** matrix jobs, and **CI passed**. The final
 gate fails if a dependency fails, is skipped, or is cancelled. When adding or
 renaming CI jobs, update the gate dependencies and the GitHub ruleset before
 merging. Keep CI running for every PR; do not add path filters that omit checks.
