@@ -23,7 +23,7 @@ PATH="$PWD/.venv/bin:$PATH" .venv/bin/python -m unittest discover -s tests -v
 ```
 
 Tests invoke the installed public CLI using controlled SSH and VS Code peers;
-they do not submit jobs to a real cluster. CI tests Python 3.9 and 3.14 on Linux
+they do not submit jobs to a real cluster. CI tests Python 3.10 and 3.14 on Linux
 and macOS, builds the source distribution, wheel and Conda package, then installs
 the same Conda package in fresh Linux and macOS environments and runs the suite.
 
