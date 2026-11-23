@@ -9,7 +9,7 @@ language servers, and indexers off the login/frontend node.
 
 ## Requirements
 
-- Linux or macOS with Python 3.9 or newer and OpenSSH on the local machine.
+- Linux or macOS with Python 3.10 or newer and OpenSSH on the local machine.
 - A local installation of VS Code with the **Remote - SSH** extension.
 - The `code` command available in your local shell. In VS Code, run
   **Shell Command: Install 'code' command in PATH** if it is missing.
