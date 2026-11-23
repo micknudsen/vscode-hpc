@@ -1,5 +1,7 @@
 # VS Code on Slurm compute nodes
 
+[![Conda Version](https://img.shields.io/conda/vn/micknudsen/vscode-hpc?style=for-the-badge&cacheSeconds=300)](https://anaconda.org/micknudsen/vscode-hpc) [![Conda Downloads](https://img.shields.io/conda/dn/micknudsen/vscode-hpc?style=for-the-badge&cacheSeconds=300)](https://anaconda.org/micknudsen/vscode-hpc)
+
 The `vscode-hpc` Python command reserves a Slurm compute node and opens an HPC folder on
 that node using VS Code Remote-SSH. It can also cancel the matching Slurm jobs
 that it creates. This moves the VS Code server, extensions, terminals,
